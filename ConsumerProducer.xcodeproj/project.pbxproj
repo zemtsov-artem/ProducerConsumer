@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		F3A17AC71DC8A464009551CA /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F3A17AC61DC8A464009551CA /* main.cpp */; };
+		F3B65FF41DC8CA5D00ABB634 /* libmpi.20.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F3B65FF31DC8CA5D00ABB634 /* libmpi.20.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +26,8 @@
 /* Begin PBXFileReference section */
 		F3A17AC31DC8A464009551CA /* ConsumerProducer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ConsumerProducer; sourceTree = BUILT_PRODUCTS_DIR; };
 		F3A17AC61DC8A464009551CA /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		F3A17ACD1DC8A54A009551CA /* function.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = function.h; sourceTree = "<group>"; };
+		F3B65FF31DC8CA5D00ABB634 /* libmpi.20.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libmpi.20.dylib; path = ../../../../../../usr/local/lib/libmpi.20.dylib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +35,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F3B65FF41DC8CA5D00ABB634 /* libmpi.20.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,6 +47,7 @@
 			children = (
 				F3A17AC51DC8A464009551CA /* ConsumerProducer */,
 				F3A17AC41DC8A464009551CA /* Products */,
+				F3B65FF21DC8CA5D00ABB634 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -58,8 +63,17 @@
 			isa = PBXGroup;
 			children = (
 				F3A17AC61DC8A464009551CA /* main.cpp */,
+				F3A17ACD1DC8A54A009551CA /* function.h */,
 			);
 			path = ConsumerProducer;
+			sourceTree = "<group>";
+		};
+		F3B65FF21DC8CA5D00ABB634 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F3B65FF31DC8CA5D00ABB634 /* libmpi.20.dylib */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -218,6 +232,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				DEVELOPMENT_TEAM = UNZP8WBNM9;
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -226,6 +242,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				DEVELOPMENT_TEAM = UNZP8WBNM9;
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -249,6 +267,7 @@
 				F3A17ACC1DC8A464009551CA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
