@@ -36,6 +36,17 @@ int* ChangeData(int* value,int number) {
     return value;
 }
 
+int* ChangeDataDec(int* value,int number) {
+    for (int i = 0; i< number; i++) {
+        if ( *(value+i) == 0) {
+            *(value+i) = 9;
+        } else {
+            ( *(value+i) )--;
+        }
+    }
+    return value;
+}
+
 void UseData(int* value,int number) {
     for (int i =0; i< number; i++) {
         cout << *(value+i) <<" ";
@@ -53,7 +64,11 @@ void Producer (int* value,int number ) {
 }
 
 void Consumer (int*value,int number) {
-    cout << "Consumer" << endl;
+    cout << "Consumer" << endl
+    <<"start value = ";
+    UseData(value,number);
+    value=ChangeDataDec(value,number);
+    cout <<"Finish value = ";
     UseData(value,number);
 }
 

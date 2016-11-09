@@ -15,6 +15,7 @@ static int* mainData=new int[10];
 int main(int argc, char * argv[]) {
     int numproc,procId;
     int Amount = 10;
+    int ProducerFlag = 0,ConsumerFlag = 0;
     
     mainData=PrepareData(mainData,Amount);
     pthread_mutex_t mutex;
@@ -23,39 +24,46 @@ int main(int argc, char * argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &procId);
     
     if (procId == 0) {
-        pthread_mutex_init(&mutex, PTHREAD_MUTEX_NORMAL);
-        pthread_mutex_lock(&mutex);
+        //pthread_mutex_init(&mutex, PTHREAD_MUTEX_NORMAL);
+        //pthread_mutex_lock(&mutex);
         UseData(mainData, Amount);
-        pthread_mutex_unlock(&mutex);
+        //pthread_mutex_unlock(&mutex);
     }
-    //MPI_Bcast(mainData, Amount, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(mainData, Amount, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     
     if ( (procId%2) == 0){
         // Producer
-            pthread_mutex_lock(&mutex);
+            //pthread_mutex_lock(&mutex);
             Producer(mainData,Amount);
-            pthread_mutex_unlock(&mutex);
+            ProducerFlag=procId;
+            //pthread_mutex_unlock(&mutex);
             UseData(mainData, Amount);
     }
-    //for (int i = 0; i<numproc; i+=2) {
-     //   MPI_Bcast(mainData, Amount, MPI_INT, i, MPI_COMM_WORLD);
-    //}
+    
+    //MPI_Bcast(mainData, Amount, MPI_INT, ProducerFlag, MPI_COMM_WORLD);
+    
+    
+    if (procId%2==0) {
+        MPI_Bcast(mainData, Amount, MPI_INT, ProducerFlag, MPI_COMM_WORLD);
+        //MPI_Bcast(mainData, Amount, MPI_INT, procId, MPI_COMM_WORLD);
+    }
 
     if( (procId%2) != 0){
         // Consumer
             pthread_mutex_lock(&mutex);
             Consumer(mainData,Amount);
+            ConsumerFlag=procId;
             pthread_mutex_unlock(&mutex);
     }
-    //MPI_Bcast(mainData, Amount, MPI_INT, procId, MPI_COMM_WORLD);
+    MPI_Bcast(mainData, Amount, MPI_INT, ConsumerFlag, MPI_COMM_WORLD);
     
 
     
     MPI_Barrier(MPI_COMM_WORLD);
-    if(procId==0) {
-        pthread_mutex_destroy(&mutex);
-    }
+    //if(procId==0) {
+      //  pthread_mutex_destroy(&mutex);
+    //}
    
     MPI_Finalize();
    
