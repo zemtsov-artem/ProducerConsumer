@@ -9,17 +9,11 @@
 #include <mpi.h>
 #include <iostream>
 #include <queue>
-#include <thread>
-#include <stdlib.h>
 #include "time.h"
-#include <stdio.h>
 
 #define MANAGER 0
-#define PRODUCER 2
-#define CONSUMER 1
 
-struct info
-{
+struct info {
     int rank;
     int whatDoYouNeed;
     int res;
@@ -40,7 +34,6 @@ private:
     std::queue<int> resources; //очередь ресурсов
     info i1;
     MPI_Status status;
-    int ex;
     void RequestResource() { //запрос ресурсов
         MPI_Send(&i1, 3, MPI_INT, MANAGER, 0, MPI_COMM_WORLD); //передача сообщения менеджеру от определенного потербителя
     }
@@ -54,8 +47,7 @@ private:
         }
         if (resource != 0){
             resources.push(resource); //добавление ресурсов в очередь
-            fprintf(stdout, "Consumer %d : i`ve got resource %d\n", i1.rank, resources.back());
-            fflush(stdout);
+            std::cout<<"Consumer "<< i1.rank<< " : i`ve got resource " << resources.back()<<std::endl;
             resources_to_consume--; //уменьшение кол-ва ресурсов на единицу
         }
     }
@@ -65,7 +57,6 @@ public:
         resources_to_consume = in_resource_num; //задаем кол-во ресурсов для потребителя
         i1.rank = in_rank; //задаем процесс для потребителя
         i1.whatDoYouNeed = GET_RESOURCE;
-        ex = 0;
     }
     void Run() { //запуск
         while (resources_to_consume) { //пока не кончились ресурсы
@@ -85,20 +76,18 @@ private:
     MPI_Status status;
     info i2;
     int k;
-    int ex1;
 private:
     void SendResourceToManager() { //отправление ресурса пв буфер
         i2.res = resources.front();
         int answear;
         MPI_Send(&i2, 3, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);
-        MPI_Recv(&answear, 1, MPI_INT, MANAGER, 1, MPI_COMM_WORLD, &status); //получаем ответ с информацией о сотоянии буфера
+        MPI_Recv(&answear, 1, MPI_INT, MANAGER, 1, MPI_COMM_WORLD, &status); //получаем ответ с информацией о соcтоянии буфера
         if (answear == -1) {
             MPI_Finalize();
             exit(0);
         }
         if (answear == 0){ //если буфер не полон
             std::cout<< "Producer "<<i2.rank<<": sending resource in buffer"<<std::endl;
-            fflush(stdout);
             resources.pop(); //удаляем ресурс из очереди
         }else{
             std::cout << "Producer "<<i2.rank<<": buffer is full. Failed to put the resource in buffer"<<std::endl;
@@ -115,7 +104,6 @@ public:
         resources_to_produce = num;  //задаем кол-во ресурсов
         i2.whatDoYouNeed = PUT_RESOURCE;
         k = resources_to_produce;
-        ex1 = 0;
     }
     void Run()
     { //запуск
@@ -143,19 +131,20 @@ private:
     
 private:
     void Put(int producer_id, int resource) { //кладем элемент в буфер
-        int otvet = 1;
+        int answear = 1;
         for (int i = 0; i < N; i++) {
             if (buffer[i] == 0) {
-                otvet = 0;
+                answear = 0;
                 buffer[i] = resource;
                 break;
             }
         }
-        if (otvet == 0) {
+        if (answear == 0) {
             std::cout<< "Manager: producer "<<producer_id<< " put resource "<<resource<<std::endl;
         }
-        MPI_Send(&otvet, 1, MPI_INT, producer_id, 1, MPI_COMM_WORLD); //отправляем ответ с информацией, полон буфер или нет
+        MPI_Send(&answear, 1, MPI_INT, producer_id, 1, MPI_COMM_WORLD); //отправляем ответ с информацией, полон буфер или нет
     }
+    
     void Get(int consumer_id) { //забираем элемент из буфера
         int resource=0;
         for (int i = 0; i < N; i++){
@@ -167,10 +156,9 @@ private:
                 break;
             }
         }
-        
         if (resource != 0) {
             std::cout<<"Manager: consumer "<<consumer_id<<" get resource "<< resource << std::endl;
-        }else{
+        }else {
             if (pro == 0){
                 for (int i = 1; i < p_size; i++){
                     std::cout << "p_size1= " << i<<std::endl;
@@ -224,7 +212,7 @@ public:
             }
             if (i3.whatDoYouNeed == GET_RESOURCE){
                 Get(i3.rank);
-            } 
+            }
         }
     }
 };
