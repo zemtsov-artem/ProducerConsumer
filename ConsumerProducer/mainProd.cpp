@@ -35,7 +35,7 @@ private:
     info i1;
     MPI_Status status;
     void RequestResource() { //запрос ресурсов
-        MPI_Send(&i1, 3, MPI_INT, MANAGER, 0, MPI_COMM_WORLD); //передача сообщения менеджеру от определенного потербителя
+        MPI_Send(&i1, 3, MPI_INT, MANAGER, 0, MPI_COMM_WORLD); //передача сообщения менеджеру от определенного потербителя //my
     }
     void RecieveResource() { //получение ресурсов
         int resource = 0;
@@ -64,7 +64,7 @@ public:
             RecieveResource();
         }
         i1.whatDoYouNeed = EXITC;
-        MPI_Send(&i1, 3, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);
+        MPI_Send(&i1, 3, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);//my
         
     }
 };
@@ -76,32 +76,11 @@ private:
     MPI_Status status;
     info i2;
     int k;
-private:
-    void SendResourceToManager() { //отправление ресурса пв буфер
-        i2.res = resources.front();
-        int answear;
-        MPI_Send(&i2, 3, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);
-        MPI_Recv(&answear, 1, MPI_INT, MANAGER, 1, MPI_COMM_WORLD, &status); //получаем ответ с информацией о соcтоянии буфера
-        if (answear == -1) {
-            MPI_Finalize();
-            exit(0);
-        }
-        if (answear == 0){ //если буфер не полон
-            std::cout<< "Producer "<<i2.rank<<": sending resource in buffer"<<std::endl;
-            resources.pop(); //удаляем ресурс из очереди
-        }else{
-            std::cout << "Producer "<<i2.rank<<": buffer is full. Failed to put the resource in buffer"<<std::endl;
-        }
-    }
-    void CreateResource() { //создаем ресурс
-        int resource = k - resources_to_produce + (i2.rank - 1) * 5 + 1;
-        resources.push(resource); //добавляем ресурсы в очередь
-        resources_to_produce--; //уменьшаем кол-во ресурсов производителя на 1
-    }
+
 public:
-    Producer(int in_rank, int num) { //конструктор
+    Producer(int in_rank, int amount) { //конструктор
         i2.rank = in_rank; //задаем ранг
-        resources_to_produce = num;  //задаем кол-во ресурсов
+        resources_to_produce = amount;  //задаем кол-во ресурсов
         i2.whatDoYouNeed = PUT_RESOURCE;
         k = resources_to_produce;
     }
@@ -116,7 +95,42 @@ public:
             SendResourceToManager(); //отправляем ресурс потребителю
         }
         i2.whatDoYouNeed = EXITP;
-        MPI_Send(&i2, 3, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);
+        MPI_Send(&i2, 3, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);//my
+    }
+    
+private:
+    void CreateResource() { //создаем ресурс
+        //std::cout<<"Check trash - "<<k-resources_to_produce<<std::endl;
+        int resource;
+        int coefficient=k-resources_to_produce+1;
+        if (i2.rank==1){
+            resource =(i2.rank*100)+coefficient;
+        }
+        else {
+            resource =((i2.rank-i2.rank/2) *100)+coefficient;
+        }
+        resources.push(resource); //добавляем ресурсы в очередь
+        resources_to_produce--; //уменьшаем кол-во ресурсов производителя на 1
+    }
+
+    void SendResourceToManager() { //отправление ресурса в буфер
+        //std::cout<<"First resourse is - "<<resources.front()<< std::endl;
+        i2.res = resources.front();
+        int answear;
+        
+        MPI_Send(&i2, 3, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);//my
+        MPI_Recv(&answear, 1, MPI_INT, MANAGER, 1, MPI_COMM_WORLD, &status); //получаем ответ с информацией о соcтоянии буфера
+        
+        if (answear == -1) {
+            MPI_Finalize();
+            exit(0);
+        }
+        if (answear == 0){ //если буфер не полон
+            std::cout<< "Producer "<<i2.rank<<": sending resource in buffer"<<std::endl;
+            resources.pop(); //удаляем ресурс из очереди
+        }else{
+            std::cout << "Producer "<<i2.rank<<": buffer is full. Failed to put the resource in buffer"<<std::endl;
+        }
     }
 };
 
@@ -128,6 +142,51 @@ private:
     int N,p_size,pro,con;
     MPI_Status status;
     info i3;
+
+public:
+    Manager(int in_total_resources, int proc_size,int p,int c) { // конструктор
+        total_resources = in_total_resources;
+        p_size = proc_size;
+        N = total_resources;
+        con = c;
+        pro = p;
+        buffer = new int[total_resources];
+        for (int i = 0; i < total_resources; i++)
+        {
+            buffer[i] = 0;
+        }
+    }
+    
+    void Run() { //запуск
+        while (true) {
+            MPI_Recv(&i3, 3, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+            //std::cout<<"Check "<<i3.res<<std::endl;
+            if (i3.whatDoYouNeed == EXITP){
+                pro--;
+            }
+            if (i3.whatDoYouNeed == EXITC){
+                con--;
+                if (con == 0){
+                    for (int i = 1; i < p_size; i++){
+                        if (i%2){
+                            MPI_Send(&STOP, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+                        }else {
+                            MPI_Send(&STOP, 1, MPI_INT, i, 3, MPI_COMM_WORLD);
+                        }
+                    }
+                    MPI_Finalize();
+                    exit(0);
+                }
+            }
+            
+            if (i3.whatDoYouNeed == PUT_RESOURCE){
+                Put(i3.rank, i3.res);
+            }
+            if (i3.whatDoYouNeed == GET_RESOURCE){
+                Get(i3.rank);
+            }
+        }
+    }
     
 private:
     void Put(int producer_id, int resource) { //кладем элемент в буфер
@@ -137,6 +196,9 @@ private:
                 answear = 0;
                 buffer[i] = resource;
                 break;
+            }
+            else if(i==N-1){
+                std::cout<<"Buffer is full"<<std::endl;
             }
         }
         if (answear == 0) {
@@ -171,50 +233,7 @@ private:
         }
         MPI_Send(&resource, 1, MPI_INT, consumer_id, 3, MPI_COMM_WORLD);
     }
-    
-public:
-    Manager(int in_total_resources, int proc_size,int p,int c) { // конструктор
-        total_resources = in_total_resources;
-        p_size = proc_size;
-        N = total_resources;
-        con = c;
-        pro = p;
-        buffer = new int[total_resources];
-        for (int i = 0; i < total_resources; i++)
-        {
-            buffer[i] = 0;
-        }
-    }
-    
-    void Run() { //запуск
-        while (true) {
-            MPI_Recv(&i3, 3, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-            if (i3.whatDoYouNeed == EXITP){
-                pro--;
-            }
-            if (i3.whatDoYouNeed == EXITC){
-                con--;
-                if (con == 0){
-                    for (int i = 1; i < p_size; i++){
-                        if (i%2){
-                            MPI_Send(&STOP, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
-                        }else {
-                            MPI_Send(&STOP, 1, MPI_INT, i, 3, MPI_COMM_WORLD);
-                        }
-                    }
-                    MPI_Finalize();
-                    exit(0);
-                }
-            }
-            
-            if (i3.whatDoYouNeed == PUT_RESOURCE){
-                Put(i3.rank, i3.res);
-            }
-            if (i3.whatDoYouNeed == GET_RESOURCE){
-                Get(i3.rank);
-            }
-        }
-    }
+
 };
 
 int main(int argc, char** argv) {
@@ -241,12 +260,12 @@ int main(int argc, char** argv) {
     else { //если не в нулевом процессе
         if (rank % 2) { //каждый второй процесс будет производителем
             std::cout << "The process with the rank of " << rank << " is Producer" << std::endl;
-            Producer producer(rank,2); //создаем производителя для определенного процесса с 5 ресурсами
+            Producer producer(rank,5); //создаем производителя для определенного процесса с 5 ресурсами
             producer.Run(); //запускаем его
         }
         else { //а остальные потребителями
             std::cout << "The process with the rank of " << rank << " is Consumer" << std::endl;
-            Consumer consumer(rank,2); //создаем потребителя для определенного процесса с 5 ресурсами
+            Consumer consumer(rank,5); //создаем потребителя для определенного процесса с 5 ресурсами
             consumer.Run(); //создаем потребителя
         }
     }
